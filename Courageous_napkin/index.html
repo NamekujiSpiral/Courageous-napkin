@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.4.21/p5.js"></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1，viewport-fit=cover" />
+    <link rel="stylesheet" href="./style.css">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+  </head>
+  <body>
+    <div id="button">
+      <label>音源:<input type="file" id = "Music" accept=".mp3,.m4a,.aac,.wav,.flac"></label><br>
+     <label>BPM:<input type="text" id = "BPM"></label><br>
+      <label>メトロノーム:<input type="checkbox" id="tc"></label><br>
+      <label>オフセット:<input type="text" id = "OffSet" value="0">(s)</label>
+      <input type="button" value="決定" id="checkButton">
+    </div>
+<canvas id="ac" width="" height=""></canvas>
+<div id="disp"></div>
+    <main>
+    </main>
+    <script src="sketch.js"></script>
+  </body>
+</html>
