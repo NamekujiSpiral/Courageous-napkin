@@ -5,12 +5,13 @@ const button = document.getElementById("button");
 const gomil = document.getElementById("gomil");
 const playf = document.getElementById("playf");
 const outputf = document.getElementById("output");
+const bumk = document.getElementById("bunkatsu");
 
 let music = new Audio();
 const jac = new Audio();
-jac.src = "assets/よわい.wav";
+jac.src = "assets/よわい.mp3";
 const tuy = new Audio();
-tuy.src = "assets/つよい.wav";
+tuy.src = "assets/つよい.mp3";
 let BPM;
 
 let playing = false;
@@ -23,6 +24,15 @@ let lanData = [];
 let timData = [];
 let widData = [];
 
+let sLanData = [];
+let TchTim = [];
+
+bumk.addEventListener("change", Updat);
+function Updat() {
+  if (!playing) {
+    bunkatsu = bumk.value;
+  }
+}
 function setup() {
   window.addEventListener(
     "touchstart",
@@ -111,9 +121,10 @@ function output() {
     } else {
       //有効なタップなら
       let nowSh = Math.ceil(timData[i] / bunkatsu);
-      let nowHak = (timData[i] % bunkatsu) + 1;//+1?
+      let nowHak = (timData[i] % bunkatsu) + 1; //+1?
       let find = shousetsuData.indexOf(nowSh);
-      if (find === -1) {//小節がない
+      if (find === -1) {
+        //小節がない
         shousetsuData.push(nowSh);
         fLanData.push(lanData[i]);
 
@@ -128,6 +139,15 @@ function output() {
         noteData.push(chores);
       } else {
         let find2 = fLanData.indexOf(lanData[i]);
+        let k = 0;
+        while (
+          k < shousetsuData.length - 1 &&
+          !(shousetsuData[find2] === nowSh) &&
+          !(find2 === -1)
+        ) {
+          k = find2;
+          find2 = fLanData.indexOf(lanData[i], k + 1);
+        }
         if (find2 === -1) {
           shousetsuData.push(nowSh);
           fLanData.push(lanData[i]);
@@ -143,16 +163,16 @@ function output() {
           noteData.push(chores);
         } else {
           //小説もレーンもある
-          let chores = noteData[find];
+          let chores = noteData[find2];
           let chores2 = "";
           for (j = 0; j < bunkatsu; j++) {
             if (j + 1 === nowHak) {
               chores2 += "1" + widData[i];
             } else {
-              chores2 += chores.substr(j*2,2);
+              chores2 += chores.substr(j * 2, 2);
             }
           }
-          noteData[find] = chores2;
+          noteData[find2] = chores2;
         }
       }
     }
@@ -162,12 +182,12 @@ function output() {
       "#" +
       ("000" + (shousetsuData[i] - 1)).slice(-3) +
       "1" +
-      tohex(fLanData[i]) +
+      tohex(fLanData[i] + 1) +
       ":";
     tex += noteData[i] + "\n";
   }
 
-  const blob = new Blob([tex], { type: "text/plain" });
+  const blob = new Blob([tex], { type: "text/sus" });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
   link.download = "ファイル名.sus";
@@ -175,7 +195,20 @@ function output() {
 }
 function getLane(x, y) {
   let lan = Math.floor((x - 0.5) / 0.064);
-  if (0 <= lan + 6 <= 12) {
+  if (0 <= lan + 6 <= 11) {
+    if (9 <= lan + 6) {
+      //はみ出し防止
+      return 9;
+    } else {
+      return lan + 6;
+    }
+  } else {
+    return -1;
+  }
+}
+function getLaneD(x, y) {
+  let lan = Math.floor((x - 0.5) / 0.064);
+  if (0 <= lan + 6 <= 11) {
     return lan + 6;
   } else {
     return -1;
@@ -186,16 +219,6 @@ function draw() {
   img.src = "hi2.png";
   ctx.drawImage(img, 0, 0, windowWidth, windowHeight);
 
-  ctx.strokeStyle = "white";
-  // パスの開始
-  ctx.beginPath();
-  // 起点
-  ctx.moveTo(windowWidth / 2, 0);
-  // 終点
-  ctx.lineTo(windowWidth / 2, windowHeight);
-
-  // 描画
-  ctx.stroke();
   if (playing) {
     ac.ontouchstart = function (e) {
       e.preventDefault(); // デフォルトイベントをキャンセル
@@ -209,9 +232,16 @@ function draw() {
         lanData.push(getLane(lx, ly));
         timData.push(shousetsu * bunkatsu + haku);
         widData.push(3);
+    if (getLane(lx,ly) != -1) {
+      let f = getLaneD(lx, ly);
+      sLanData.push(f);
+      TchTim.push(frameCount);
+    }
+        document.getElementById("disp").innerHTML =
+          Math.floor(lx * 1000) / 1000 + "," + Math.floor(ly * 1000) / 1000;
       }
     };
-
+    //0.103,0.971-0.172,,->0.487,0.127-0.491
     /*ac.ontouchmove = function (e) {
       e.preventDefault(); // デフォルトイベントをキャンセル
       let sd = "";
@@ -226,14 +256,25 @@ function draw() {
       }
     };*/
   }
-}
-const paddingZero = (number) => {
-  if (number < 10) {
-    return ("00" + number).slice(-2);
+  for (i = 0; i < sLanData.length; i++) {
+    let tick = frameCount - TchTim[i];
+    drawLane(sLanData[i] , 0.5 - tick / 20);
+    if(tick > 10){
+      sLanData.splice(i,1);
+      TchTim.splice(i,1);
+    }
   }
-  return number;
-};
-
+}
+function drawLane(lane,alf) {
+ctx.beginPath();
+  ctx.fillStyle = "rgba(255,255,255,"+alf+")";
+  ctx.moveTo((lane * 0.0794 + 0.103) * windowWidth, windowHeight);
+  ctx.lineTo(((lane - 1) * 0.0794 + 0.103) * windowWidth, windowHeight);
+  ctx.lineTo((lane* 0.0026 +0.487) * windowWidth, 0);
+  ctx.lineTo(((lane -1) * 0.0026 +0.487) * windowWidth, 0);
+  ctx.closePath();
+  ctx.fill();
+}
 function hakuc() {
   if (haku === bunkatsu) {
     haku = 0;
@@ -247,10 +288,18 @@ function mouseClicked() {
   if (playing) {
     let lx = mouseX / windowWidth;
     let ly = mouseY / windowHeight;
+    let lane = getLane(lx, ly);
 
     lanData.push(getLane(lx, ly));
     timData.push(shousetsu * bunkatsu + haku);
     widData.push(3);
+    if (lane != -1) {
+      let f = getLaneD(lx, ly);
+      sLanData.push(f);
+      TchTim.push(frameCount);
+    }
+            document.getElementById("disp").innerHTML =
+          Math.floor(lx * 1000) / 1000 + "," + Math.floor(ly * 1000) / 1000;
   }
 }
 function nom() {
