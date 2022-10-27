@@ -17,15 +17,17 @@ let BPM;
 let playing = false;
 
 let bunkatsu = 4; //n分音符
-let shousetsu = 0;
-let haku = 1;
+let shousetsu = 0;//今の小節
+let haku = 1;//今の拍
 
-let lanData = [];
-let timData = [];
-let widData = [];
+let lanData = [];//タップされたノーツのレーン
+let timData = [];//タップされたtiming
+let widData = [];//ノーツ幅(デフォルト:3)
 
-let sLanData = [];
+let sLanData = [];//レーンタップで光るやつ用
 let TchTim = [];
+
+const longSec = 100;//長押しでスライドと判定されるミリ秒数
 
 bumk.addEventListener("change", Updat);
 function Updat() {
@@ -121,7 +123,7 @@ function output() {
     } else {
       //有効なタップなら
       let nowSh = Math.ceil(timData[i] / bunkatsu);
-      let nowHak = (timData[i] % bunkatsu) + 1; //+1?
+      let nowHak = (timData[i] % bunkatsu) + 1;
       let find = shousetsuData.indexOf(nowSh);
       if (find === -1) {
         //小節がない
@@ -220,7 +222,7 @@ function draw() {
   ctx.drawImage(img, 0, 0, windowWidth, windowHeight);
 
   if (playing) {
-    ac.ontouchstart = function (e) {
+      ac.ontouchstart = function (e) {
       e.preventDefault(); // デフォルトイベントをキャンセル
       // 引数のtouchesプロパティは配列の要素数（触れている指の数）だけ繰り返し処理
       for (let i = 0; i < e.touches.length; i++) {
@@ -237,24 +239,9 @@ function draw() {
       sLanData.push(f);
       TchTim.push(frameCount);
     }
-        document.getElementById("disp").innerHTML =
-          Math.floor(lx * 1000) / 1000 + "," + Math.floor(ly * 1000) / 1000;
       }
     };
-    //0.103,0.971-0.172,,->0.487,0.127-0.491
-    /*ac.ontouchmove = function (e) {
-      e.preventDefault(); // デフォルトイベントをキャンセル
-      let sd = "";
-      // 引数のtouchesプロパティは配列の要素数（触れている指の数）だけ繰り返し処理
-      for (let i = 0; i < e.touches.length; i++) {
-        let t = e.touches[i]; // 触れている指に関する情報を取得
-
-        ctx.beginPath();
-        ctx.arc(t.pageX, t.pageY, 50, 0, 2 * Math.PI, false);
-        ctx.fillStyle = "white";
-        ctx.fill();
-      }
-    };*/
+    long_press(ac,addTap,addSlide,longSec)
   }
   for (i = 0; i < sLanData.length; i++) {
     let tick = frameCount - TchTim[i];
@@ -265,6 +252,54 @@ function draw() {
     }
   }
 }
+function addTap(){
+
+}
+function addSlide(){
+  
+}
+function long_press(el,nf,lf,sec){
+  let longclick = false;
+  let longtap = false;
+  let touch = false;
+  let timer;
+  el.addEventListener('touchstart',()=>{
+    touch = true;
+    longtap = false;
+    timer = setTimeout(() => {
+      longtap = true;
+      lf();
+    }, sec);
+  })
+  el.addEventListener('touchend',()=>{
+    if(!longtap){
+      clearTimeout(timer);
+      nf();
+    }else{
+      touch = false;
+    }
+  })
+  
+  el.addEventListener('mousedown',()=>{
+    if(touch) return;
+    longclick = false;
+    timer = setTimeout(() => {
+      longclick = true;
+      lf();
+    }, sec);
+  })
+  el.addEventListener('click',()=>{
+    if(touch){
+      touch = false;
+      return;
+    }
+    if(!longclick){
+      clearTimeout(timer);
+      nf();
+    }
+  });
+}
+
 function drawLane(lane,alf) {
 ctx.beginPath();
   ctx.fillStyle = "rgba(255,255,255,"+alf+")";
@@ -298,8 +333,6 @@ function mouseClicked() {
       sLanData.push(f);
       TchTim.push(frameCount);
     }
-            document.getElementById("disp").innerHTML =
-          Math.floor(lx * 1000) / 1000 + "," + Math.floor(ly * 1000) / 1000;
   }
 }
 function nom() {
